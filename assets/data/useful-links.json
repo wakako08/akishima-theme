@@ -1,0 +1,318 @@
+[
+  {
+    "title": "周辺自治会連合会",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "立川市自治会連合会",
+            "url": "http://www.tachikawa-jichiren.com/"
+          },
+          {
+            "label": "青梅市自治会連合会",
+            "url": "http://www.ome-rengou.jp/"
+          },
+          {
+            "label": "八王子市町会自治会連合会",
+            "url": "http://www.chojiren-hachioji.jp/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "都・市役所･関連機関・市立会館等",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "昭島市役所",
+            "url": "http://www.city.akishima.lg.jp/"
+          },
+          {
+            "label": "昭島市商工会",
+            "url": "https://akishima.or.jp/"
+          },
+          {
+            "label": "清掃センター541-1342",
+            "url": ""
+          },
+          {
+            "label": "朝日町546-5167",
+            "url": ""
+          },
+          {
+            "label": "拝島町542-4083",
+            "url": ""
+          },
+          {
+            "label": "市民図書館",
+            "url": "http://www.library.akishima.tokyo.jp/"
+          },
+          {
+            "label": "勤労商工市民センター545-0230",
+            "url": ""
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "暮らしの情報",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "広報東京",
+            "url": "http://www.koho.metro.tokyo.jp/"
+          },
+          {
+            "label": "昭島ガス",
+            "url": "http://www.akishimagas.co.jp/"
+          },
+          {
+            "label": "東京電力",
+            "url": "http://www.tepco.co.jp/index-j.html"
+          },
+          {
+            "label": "停電・料金問合せ0120-995-662",
+            "url": ""
+          },
+          {
+            "label": "昭島郵便局",
+            "url": "http://map.japanpost.jp/pc/syousai.php?id=300100584000"
+          },
+          {
+            "label": "昭島市の休日診療(昭島医師会)",
+            "url": "http://www.akishima.tokyo.med.or.jp/"
+          },
+          {
+            "label": "シルバー人材センター",
+            "url": "http://www.akishima-sc.or.jp/"
+          },
+          {
+            "label": "とうきょう福祉ナビゲーション",
+            "url": "http://www.fukunavi.or.jp/fukunavi/"
+          },
+          {
+            "label": "昭島市社会福祉協議会",
+            "url": "http://www.acsw.jp/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "交通機関",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "JR東日本",
+            "url": "http://www.jreast.co.jp/"
+          },
+          {
+            "label": "忘れ物050-2016-1601",
+            "url": ""
+          },
+          {
+            "label": "JR西立川駅",
+            "url": "http://www.jreast-timetable.jp/timetable/list1162.html"
+          },
+          {
+            "label": "JR東中神駅",
+            "url": "http://www.jreast-timetable.jp/timetable/list1293.html"
+          },
+          {
+            "label": "JR中神駅",
+            "url": "http://www.jreast-timetable.jp/timetable/list1087.html"
+          },
+          {
+            "label": "JR昭島駅",
+            "url": "http://www.jreast-timetable.jp/timetable/list0038.html"
+          },
+          {
+            "label": "JR拝島駅",
+            "url": "http://www.jreast-timetable.jp/timetable/list1213.html"
+          },
+          {
+            "label": "JR運行情報(関東エリア)",
+            "url": "http://traininfo.jreast.co.jp/train_info/kanto.aspx"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "警察・消防",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "昭島警察署（警視庁ホームページ）",
+            "url": "https://www.keishicho.metro.tokyo.lg.jp/about_mpd/shokai/ichiran/kankatsu/akishima/index.html"
+          },
+          {
+            "label": "昭島消防署（東京消防庁ホームページ）",
+            "url": "https://www.tfd.metro.tokyo.lg.jp/fs/akisima/index.html"
+          },
+          {
+            "label": "大神出張所546-0119",
+            "url": ""
+          },
+          {
+            "label": "内閣府防災情報",
+            "url": "http://www.bousai.go.jp/"
+          },
+          {
+            "label": "東京都葛飾福祉工場(防災・避難用品)",
+            "url": "http://www.fireman21.net/new/index2.html"
+          },
+          {
+            "label": "東京消防庁・救急相談センター＃７１１９ 又は042-521-2323(多摩地区)",
+            "url": ""
+          },
+          {
+            "label": "警察庁",
+            "url": "http://www.npa.go.jp/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "学校",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "東小学校",
+            "url": "http://www.city.akishima.ed.jp/~azuma/"
+          },
+          {
+            "label": "共成小学校",
+            "url": "http://www.city.akishima.ed.jp/~kyosei/"
+          },
+          {
+            "label": "富士見丘小学校",
+            "url": "http://www.city.akishima.ed.jp/~fujimi/"
+          },
+          {
+            "label": "武蔵野小学校",
+            "url": "http://www.city.akishima.ed.jp/~musasino/"
+          },
+          {
+            "label": "玉川小学校",
+            "url": "http://www.city.akishima.ed.jp/~tamagawa/"
+          },
+          {
+            "label": "中神小学校",
+            "url": "http://www.city.akishima.ed.jp/~nakagami/"
+          },
+          {
+            "label": "つつじが丘小学校",
+            "url": "http://www.city.akishima.ed.jp/~tsutsuji/"
+          },
+          {
+            "label": "光華小学校",
+            "url": "http://www.city.akishima.ed.jp/~kohka/"
+          },
+          {
+            "label": "成隣小学校",
+            "url": "http://www.city.akishima.ed.jp/~seirin/"
+          },
+          {
+            "label": "田中小学校",
+            "url": "http://www.city.akishima.ed.jp/~tanakas/"
+          },
+          {
+            "label": "拝島第一小学校",
+            "url": "http://www.city.akishima.ed.jp/~haijima1/"
+          },
+          {
+            "label": "拝島第二小学校",
+            "url": "http://www.city.akishima.ed.jp/~haijima2/"
+          },
+          {
+            "label": "拝島第三小学校",
+            "url": "http://www.city.akishima.ed.jp/~haijima3/"
+          },
+          {
+            "label": "昭和中学校",
+            "url": "http://www.city.akishima.ed.jp/~showa/"
+          },
+          {
+            "label": "福島中学校",
+            "url": "http://www.city.akishima.ed.jp/~fukujima/"
+          },
+          {
+            "label": "瑞雲中学校",
+            "url": "http://www.city.akishima.ed.jp/~zuiun/"
+          },
+          {
+            "label": "清泉中学校",
+            "url": "http://www.city.akishima.ed.jp/~seisen/"
+          },
+          {
+            "label": "拝島中学校",
+            "url": "http://www.city.akishima.ed.jp/~haijima/"
+          },
+          {
+            "label": "多摩辺中学校",
+            "url": "http://www.city.akishima.ed.jp/~tamabe/"
+          },
+          {
+            "label": "私)啓明学園初等学校・中学校",
+            "url": "http://www.keimei.ac.jp/"
+          },
+          {
+            "label": "私立啓明学園高等学校",
+            "url": "http://www.keimei.ac.jp/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "交流都市",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "岩手県岩泉町",
+            "url": "http://www.town.iwaizumi.iwate.jp/"
+          },
+          {
+            "label": "群馬県館林市",
+            "url": "http://www.city.tatebayashi.gunma.jp/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "お得なリンク",
+    "groups": [
+      {
+        "title": "",
+        "items": [
+          {
+            "label": "おくすり110番",
+            "url": "http://www.jah.ne.jp/~kako/"
+          },
+          {
+            "label": "えきから時刻表",
+            "url": "http://www.ekikara.jp/top.htm"
+          }
+        ]
+      }
+    ]
+  }
+]

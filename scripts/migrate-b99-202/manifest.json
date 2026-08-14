@@ -1,0 +1,21 @@
+{
+  "mode": "single_article",
+  "title": "【武蔵野会館運営協議会】旧サイトコンテンツまとめ（b99-202より）",
+  "file": "single-article.html",
+  "import_script": "import-b99-to-block15.sh",
+  "target": "akishimajichiren.sakura.ne.jp/wp3/block-15/",
+  "post_type": "jichikai",
+  "includes": {
+    "static_sections": [
+      "案内図",
+      "歴代挨拶",
+      "20・10周年",
+      "会則",
+      "あいスポット一覧",
+      "ギャラリー"
+    ],
+    "old_blog_posts": 83,
+    "press_pdf_links": 76
+  },
+  "bytes": 132583
+}

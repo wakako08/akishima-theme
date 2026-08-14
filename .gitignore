@@ -1,0 +1,8 @@
+.vscode/sftp.json
+.DS_Store
+.venv-map/
+node_modules/
+assets/images/wp3/
+__pycache__/
+*.pyc
+assets/videos/*.mp4
