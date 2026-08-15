@@ -17,28 +17,145 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy via FTPS
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          server: akishimajichiren.sakura.ne.jp
-          username: akishimajichiren
-          password: ${{ secrets.SFTP_PASSWORD }}
-          protocol: ftps
-          port: 21
-          local-dir: ./
-          # Sakura FTP initial folder is www, so theme path is under www/
-          server-dir: /www/wp3/wp-content/themes/akishima/
-          timeout: 600000
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/.vscode/**
-            **/.venv-map/**
-            **/node_modules/**
-            **/.DS_Store
-            **/__pycache__/**
-            **/*.pyc
-            **/assets/images/wp3/**
-            **/assets/videos/**
-            **/.ftp-deploy-sync-state.json
+          python-version: '3.12'
+
+      - name: Deploy via FTP
+        env:
+          FTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+        run: |
+          python <<'PY'
+          import os
+          from ftplib import FTP, FTP_TLS, error_perm
+          from pathlib import Path
+
+          host = "akishimajichiren.sakura.ne.jp"
+          user = "akishimajichiren"
+          password = os.environ.get("FTP_PASSWORD", "").strip()
+          if not password:
+              raise SystemExit("Missing secret SFTP_PASSWORD")
+
+          print(f"pass_len={len(password)}")
+
+          candidate_roots = [
+              "/home/akishimajichiren/www/wp3/wp-content/themes/akishima",
+              "/www/wp3/wp-content/themes/akishima",
+              "www/wp3/wp-content/themes/akishima",
+              "wp3/wp-content/themes/akishima",
+              "/wp3/wp-content/themes/akishima",
+          ]
+
+          exclude_dirs = {".git", ".github", ".vscode", ".venv-map", "node_modules", "__pycache__"}
+          exclude_prefixes = ("assets/images/wp3", "assets/videos")
+
+          def should_skip(rel: Path) -> bool:
+              if any(p in exclude_dirs for p in rel.parts):
+                  return True
+              s = rel.as_posix()
+              return any(s == p or s.startswith(p + "/") for p in exclude_prefixes)
+
+          def connect():
+              errors = []
+              # Prefer plain FTP for sakura shared hosting, then FTPS.
+              for factory, label in ((FTP, "ftp"), (FTP_TLS, "ftps")):
+                  try:
+                      ftp = factory()
+                      ftp.connect(host, 21, timeout=30)
+                      ftp.login(user, password)
+                      if isinstance(ftp, FTP_TLS):
+                          try:
+                              ftp.prot_p()
+                          except Exception:
+                              pass
+                      print(f"LOGIN_OK via {label}")
+                      print(f"PWD={ftp.pwd()}")
+                      try:
+                              print(f"LIST_ROOT={ftp.nlst()[:20]}")
+                      except Exception as exc:
+                              print(f"LIST_ROOT_FAILED={exc}")
+                      return ftp
+                  except Exception as exc:
+                      errors.append(f"{label}: {exc}")
+              raise SystemExit("FTP login failed:\n- " + "\n- ".join(errors))
+
+          def exists_dir(ftp, path: str) -> bool:
+              current = ftp.pwd()
+              try:
+                  ftp.cwd(path)
+                  ftp.cwd(current)
+                  return True
+              except error_perm:
+                  try:
+                      ftp.cwd(current)
+                  except Exception:
+                      pass
+                  return False
+
+          def ensure_dir(ftp, path: str) -> None:
+              parts = [p for p in path.strip("/").split("/") if p]
+              # absolute?
+              cursor = "/" if path.startswith("/") else ""
+              if not path.startswith("/"):
+                  # relative from current pwd
+                  base = ftp.pwd().rstrip("/")
+                  cursor = base
+              else:
+                  cursor = ""
+              for part in parts:
+                  cursor = f"{cursor}/{part}" if cursor != "" else (f"/{part}" if path.startswith("/") else part)
+                  try:
+                      ftp.mkd(cursor)
+                  except error_perm:
+                      pass
+
+          ftp = connect()
+          try:
+              remote_root = None
+              for root in candidate_roots:
+                  if exists_dir(ftp, root):
+                      remote_root = root
+                      print(f"REMOTE_OK {root}")
+                      break
+                  print(f"REMOTE_NG {root}")
+
+              if not remote_root:
+                  raise SystemExit(
+                      "Theme directory not found on FTP. Checked:\n- " + "\n- ".join(candidate_roots)
+                  )
+
+              ftp.cwd(remote_root)
+              print(f"CWD={ftp.pwd()}")
+
+              local_root = Path(".").resolve()
+              uploaded = 0
+              for path in local_root.rglob("*"):
+                  rel = path.relative_to(local_root)
+                  if should_skip(rel):
+                      continue
+                  if path.name == ".DS_Store" or path.suffix == ".pyc":
+                      continue
+
+                  if path.is_dir():
+                      ensure_dir(ftp, f"{remote_root}/{rel.as_posix()}")
+                      continue
+
+                  # ensure parent
+                  if rel.parent != Path("."):
+                      ensure_dir(ftp, f"{remote_root}/{rel.parent.as_posix()}")
+
+                  remote_file = f"{remote_root}/{rel.as_posix()}"
+                  with path.open("rb") as fh:
+                      ftp.storbinary(f"STOR {remote_file}", fh)
+                  uploaded += 1
+                  if uploaded % 25 == 0:
+                      print(f"uploaded {uploaded} files...")
+
+              print(f"Deploy finished. uploaded={uploaded}")
+          finally:
+              try:
+                  ftp.quit()
+              except Exception:
+                  ftp.close()
+          PY
