@@ -28,6 +28,8 @@ jobs:
         run: |
           python <<'PY'
           import os
+          import socket
+          import traceback
           from ftplib import FTP, FTP_TLS, error_perm
           from pathlib import Path
 
@@ -38,6 +40,20 @@ jobs:
               raise SystemExit("Missing secret SFTP_PASSWORD")
 
           print(f"pass_len={len(password)}")
+          print(f"pass_chars={''.join(sorted(set(password)))}")
+
+          # 1) Can GitHub Actions reach sakura:21 at all?
+          try:
+              with socket.create_connection((host, 21), timeout=15) as sock:
+                  banner = sock.recv(256)
+              print(f"TCP_OK port21 banner={banner!r}")
+          except Exception as exc:
+              print("TCP_NG port21")
+              traceback.print_exc()
+              raise SystemExit(
+                  "GitHub Actions cannot open TCP to sakura FTP port 21. "
+                  "Sakura may be blocking cloud IPs. Use local deploy instead."
+              ) from exc
 
           candidate_roots = [
               "/home/akishimajichiren/www/wp3/wp-content/themes/akishima",
@@ -58,26 +74,31 @@ jobs:
 
           def connect():
               errors = []
-              # Prefer plain FTP for sakura shared hosting, then FTPS.
               for factory, label in ((FTP, "ftp"), (FTP_TLS, "ftps")):
                   try:
-                      ftp = factory()
-                      ftp.connect(host, 21, timeout=30)
+                      print(f"TRY {label}")
+                      ftp = factory(timeout=30)
+                      ftp.connect(host, 21)
+                      welcome = ftp.getwelcome()
+                      print(f"{label}_welcome={welcome!r}")
                       ftp.login(user, password)
+                      ftp.set_pasv(True)
                       if isinstance(ftp, FTP_TLS):
                           try:
                               ftp.prot_p()
-                          except Exception:
-                              pass
+                          except Exception as exc:
+                              print(f"{label}_prot_p_skip={exc!r}")
                       print(f"LOGIN_OK via {label}")
                       print(f"PWD={ftp.pwd()}")
                       try:
-                              print(f"LIST_ROOT={ftp.nlst()[:20]}")
+                          print(f"LIST_ROOT={ftp.nlst()[:30]}")
                       except Exception as exc:
-                              print(f"LIST_ROOT_FAILED={exc}")
+                          print(f"LIST_ROOT_FAILED={exc!r}")
                       return ftp
                   except Exception as exc:
-                      errors.append(f"{label}: {exc}")
+                      print(f"{label}_FAILED type={type(exc).__name__} repr={exc!r}")
+                      traceback.print_exc()
+                      errors.append(f"{label}: {type(exc).__name__}: {exc!r}")
               raise SystemExit("FTP login failed:\n- " + "\n- ".join(errors))
 
           def exists_dir(ftp, path: str) -> bool:
@@ -95,20 +116,24 @@ jobs:
 
           def ensure_dir(ftp, path: str) -> None:
               parts = [p for p in path.strip("/").split("/") if p]
-              # absolute?
-              cursor = "/" if path.startswith("/") else ""
-              if not path.startswith("/"):
-                  # relative from current pwd
+              if path.startswith("/"):
+                  cursor = ""
+                  for part in parts:
+                      cursor = f"{cursor}/{part}"
+                      try:
+                          ftp.mkd(cursor)
+                      except error_perm:
+                          pass
+              else:
+                  # relative
                   base = ftp.pwd().rstrip("/")
                   cursor = base
-              else:
-                  cursor = ""
-              for part in parts:
-                  cursor = f"{cursor}/{part}" if cursor != "" else (f"/{part}" if path.startswith("/") else part)
-                  try:
-                      ftp.mkd(cursor)
-                  except error_perm:
-                      pass
+                  for part in parts:
+                      cursor = f"{cursor}/{part}"
+                      try:
+                          ftp.mkd(cursor)
+                      except error_perm:
+                          pass
 
           ftp = connect()
           try:
@@ -141,7 +166,6 @@ jobs:
                       ensure_dir(ftp, f"{remote_root}/{rel.as_posix()}")
                       continue
 
-                  # ensure parent
                   if rel.parent != Path("."):
                       ensure_dir(ftp, f"{remote_root}/{rel.parent.as_posix()}")
 
