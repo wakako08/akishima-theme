@@ -1,0 +1,43 @@
+name: Deploy theme to production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via SFTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          protocol: sftp
+          port: 22
+          local-dir: ./
+          server-dir: ${{ secrets.SFTP_REMOTE_PATH }}
+          timeout: 600000
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.vscode/**
+            **/.venv-map/**
+            **/node_modules/**
+            **/.DS_Store
+            **/__pycache__/**
+            **/*.pyc
+            **/assets/images/wp3/**
+            **/assets/videos/**
+            **/.ftp-deploy-sync-state.json
