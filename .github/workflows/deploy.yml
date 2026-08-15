@@ -17,8 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install paramiko
+        run: python -m pip install --upgrade pip paramiko
 
       - name: Deploy via SFTP
         env:
@@ -27,66 +32,103 @@ jobs:
           SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
           SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
         run: |
-          set -euo pipefail
+          python <<'PY'
+          import os
+          import stat
+          from pathlib import Path
 
-          # Trim accidental whitespace/newlines from secrets
-          SFTP_HOST="$(printf '%s' "$SFTP_HOST" | tr -d '\r\n')"
-          SFTP_USERNAME="$(printf '%s' "$SFTP_USERNAME" | tr -d '\r\n')"
-          SFTP_PASSWORD="$(printf '%s' "$SFTP_PASSWORD" | tr -d '\r\n')"
-          SFTP_REMOTE_PATH="$(printf '%s' "$SFTP_REMOTE_PATH" | tr -d '\r\n')"
-          REMOTE_PATH="${SFTP_REMOTE_PATH%/}"
+          import paramiko
 
-          if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ] || [ -z "$REMOTE_PATH" ]; then
-            echo "Missing required secrets."
-            echo "HOST set? $([ -n "$SFTP_HOST" ] && echo yes || echo no)"
-            echo "USER set? $([ -n "$SFTP_USERNAME" ] && echo yes || echo no)"
-            echo "PASS set? $([ -n "$SFTP_PASSWORD" ] && echo yes || echo no)"
-            echo "REMOTE set? $([ -n "$REMOTE_PATH" ] && echo yes || echo no)"
-            exit 1
-          fi
+          host = os.environ.get("SFTP_HOST", "").strip()
+          user = os.environ.get("SFTP_USERNAME", "").strip()
+          password = os.environ.get("SFTP_PASSWORD", "").strip()
+          remote_root = os.environ.get("SFTP_REMOTE_PATH", "").strip().rstrip("/")
 
-          echo "Connecting to host=${SFTP_HOST} user=${SFTP_USERNAME} remote=${REMOTE_PATH} pass_len=${#SFTP_PASSWORD}"
+          print(f"host={host!r}")
+          print(f"user={user!r}")
+          print(f"remote={remote_root!r}")
+          print(f"pass_len={len(password)}")
 
-          # Write lftp script without embedding password in shell word-splitting
-          SCRIPT="$(mktemp)"
-          cat > "$SCRIPT" <<EOF
-          set sftp:auto-confirm yes
-          set net:timeout 30
-          set net:max-retries 2
-          set cmd:fail-exit yes
-          open sftp://${SFTP_HOST}
-          user ${SFTP_USERNAME} "${SFTP_PASSWORD}"
-          cd ${REMOTE_PATH}
-          pwd
-          ls
-          lcd .
-          mirror -R --verbose --parallel=1 \\
-            --exclude ^\\.git/ \\
-            --exclude ^\\.github/ \\
-            --exclude ^\\.vscode/ \\
-            --exclude ^\\.venv-map/ \\
-            --exclude ^node_modules/ \\
-            --exclude ^assets/images/wp3/ \\
-            --exclude ^assets/videos/ \\
-            --exclude-glob .DS_Store \\
-            --exclude-glob *.pyc \\
-            ./ .
-          bye
-          EOF
+          if not all([host, user, password, remote_root]):
+              raise SystemExit("Missing required secrets.")
 
-          # Replace password placeholder safely: password is already in SCRIPT from heredoc.
-          # If auth fails, print clear message.
-          if ! lftp -f "$SCRIPT"; then
-            echo "SFTP deploy failed."
-            echo "Check:"
-            echo "1) SFTP_PASSWORD matches sakura FTP/SFTP password"
-            echo "2) SFTP_REMOTE_PATH is exactly:"
-            echo "   /home/akishimajichiren/www/wp3/wp-content/themes/akishima/"
-            echo "3) Or try relative path value:"
-            echo "   www/wp3/wp-content/themes/akishima/"
-            rm -f "$SCRIPT"
-            exit 1
-          fi
+          exclude_dirs = {
+              ".git",
+              ".github",
+              ".vscode",
+              ".venv-map",
+              "node_modules",
+              "__pycache__",
+          }
+          exclude_path_prefixes = (
+              "assets/images/wp3",
+              "assets/videos",
+          )
 
-          rm -f "$SCRIPT"
-          echo "Deploy finished."
+          def should_skip(rel: Path) -> bool:
+              parts = rel.parts
+              if any(p in exclude_dirs for p in parts):
+                  return True
+              s = rel.as_posix()
+              return any(s == p or s.startswith(p + "/") for p in exclude_path_prefixes)
+
+          transport = paramiko.Transport((host, 22))
+          try:
+              transport.connect(username=user, password=password)
+          except Exception as exc:
+              raise SystemExit(
+                  "SFTP login failed. Re-check SFTP_USERNAME / SFTP_PASSWORD in GitHub Secrets.\n"
+                  f"Detail: {exc}"
+              ) from exc
+
+          sftp = paramiko.SFTPClient.from_transport(transport)
+          assert sftp is not None
+
+          try:
+              try:
+                  sftp.listdir(remote_root)
+              except FileNotFoundError as exc:
+                  raise SystemExit(
+                      f"Remote path not found: {remote_root}\n"
+                      "Set SFTP_REMOTE_PATH to /home/akishimajichiren/www/wp3/wp-content/themes/akishima/"
+                  ) from exc
+
+              local_root = Path(".").resolve()
+              uploaded = 0
+
+              for path in local_root.rglob("*"):
+                  rel = path.relative_to(local_root)
+                  if should_skip(rel):
+                      continue
+                  if path.name in {".DS_Store"} or path.suffix == ".pyc":
+                      continue
+
+                  remote_path = f"{remote_root}/{rel.as_posix()}"
+                  if path.is_dir():
+                      try:
+                          sftp.stat(remote_path)
+                      except FileNotFoundError:
+                          sftp.mkdir(remote_path)
+                      continue
+
+                  # Ensure parent dirs exist
+                  parent = rel.parent
+                  cursor = remote_root
+                  if parent != Path("."):
+                      for part in parent.parts:
+                          cursor = f"{cursor}/{part}"
+                          try:
+                              sftp.stat(cursor)
+                          except FileNotFoundError:
+                              sftp.mkdir(cursor)
+
+                  sftp.put(str(path), remote_path)
+                  uploaded += 1
+                  if uploaded % 25 == 0:
+                      print(f"uploaded {uploaded} files...")
+
+              print(f"Deploy finished. uploaded={uploaded}")
+          finally:
+              sftp.close()
+              transport.close()
+          PY
