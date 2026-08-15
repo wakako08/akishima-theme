@@ -29,32 +29,64 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -z "${SFTP_HOST}" ] || [ -z "${SFTP_USERNAME}" ] || [ -z "${SFTP_PASSWORD}" ] || [ -z "${SFTP_REMOTE_PATH}" ]; then
-            echo "Missing required secrets. Check SFTP_HOST / SFTP_USERNAME / SFTP_PASSWORD / SFTP_REMOTE_PATH."
+          # Trim accidental whitespace/newlines from secrets
+          SFTP_HOST="$(printf '%s' "$SFTP_HOST" | tr -d '\r\n')"
+          SFTP_USERNAME="$(printf '%s' "$SFTP_USERNAME" | tr -d '\r\n')"
+          SFTP_PASSWORD="$(printf '%s' "$SFTP_PASSWORD" | tr -d '\r\n')"
+          SFTP_REMOTE_PATH="$(printf '%s' "$SFTP_REMOTE_PATH" | tr -d '\r\n')"
+          REMOTE_PATH="${SFTP_REMOTE_PATH%/}"
+
+          if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ] || [ -z "$REMOTE_PATH" ]; then
+            echo "Missing required secrets."
+            echo "HOST set? $([ -n "$SFTP_HOST" ] && echo yes || echo no)"
+            echo "USER set? $([ -n "$SFTP_USERNAME" ] && echo yes || echo no)"
+            echo "PASS set? $([ -n "$SFTP_PASSWORD" ] && echo yes || echo no)"
+            echo "REMOTE set? $([ -n "$REMOTE_PATH" ] && echo yes || echo no)"
             exit 1
           fi
 
-          # Normalize remote path (no trailing slash for lftp mkdir/cd)
-          REMOTE_PATH="${SFTP_REMOTE_PATH%/}"
+          echo "Connecting to host=${SFTP_HOST} user=${SFTP_USERNAME} remote=${REMOTE_PATH} pass_len=${#SFTP_PASSWORD}"
 
-          lftp -c "
-            set sftp:auto-confirm yes
-            set net:timeout 30
-            set net:max-retries 2
-            set net:reconnect-interval-base 5
-            open -u ${SFTP_USERNAME},${SFTP_PASSWORD} sftp://${SFTP_HOST}
-            mirror -R --verbose --parallel=2 \
-              --exclude-glob .git/ \
-              --exclude-glob .github/ \
-              --exclude-glob .vscode/ \
-              --exclude-glob .venv-map/ \
-              --exclude-glob node_modules/ \
-              --exclude-glob .DS_Store \
-              --exclude-glob __pycache__/ \
-              --exclude-glob '*.pyc' \
-              --exclude-glob assets/images/wp3/ \
-              --exclude-glob assets/videos/ \
-              --exclude-glob .ftp-deploy-sync-state.json \
-              ./ ${REMOTE_PATH}/
-            bye
-          "
+          # Write lftp script without embedding password in shell word-splitting
+          SCRIPT="$(mktemp)"
+          cat > "$SCRIPT" <<EOF
+          set sftp:auto-confirm yes
+          set net:timeout 30
+          set net:max-retries 2
+          set cmd:fail-exit yes
+          open sftp://${SFTP_HOST}
+          user ${SFTP_USERNAME} "${SFTP_PASSWORD}"
+          cd ${REMOTE_PATH}
+          pwd
+          ls
+          lcd .
+          mirror -R --verbose --parallel=1 \\
+            --exclude ^\\.git/ \\
+            --exclude ^\\.github/ \\
+            --exclude ^\\.vscode/ \\
+            --exclude ^\\.venv-map/ \\
+            --exclude ^node_modules/ \\
+            --exclude ^assets/images/wp3/ \\
+            --exclude ^assets/videos/ \\
+            --exclude-glob .DS_Store \\
+            --exclude-glob *.pyc \\
+            ./ .
+          bye
+          EOF
+
+          # Replace password placeholder safely: password is already in SCRIPT from heredoc.
+          # If auth fails, print clear message.
+          if ! lftp -f "$SCRIPT"; then
+            echo "SFTP deploy failed."
+            echo "Check:"
+            echo "1) SFTP_PASSWORD matches sakura FTP/SFTP password"
+            echo "2) SFTP_REMOTE_PATH is exactly:"
+            echo "   /home/akishimajichiren/www/wp3/wp-content/themes/akishima/"
+            echo "3) Or try relative path value:"
+            echo "   www/wp3/wp-content/themes/akishima/"
+            rm -f "$SCRIPT"
+            exit 1
+          fi
+
+          rm -f "$SCRIPT"
+          echo "Deploy finished."
