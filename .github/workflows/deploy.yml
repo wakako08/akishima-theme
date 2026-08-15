@@ -17,30 +17,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare upload folder
-        run: |
-          rsync -a \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='.vscode' \
-            --exclude='.venv-map' \
-            --exclude='node_modules' \
-            --exclude='.DS_Store' \
-            --exclude='__pycache__' \
-            --exclude='*.pyc' \
-            --exclude='assets/images/wp3' \
-            --exclude='assets/videos' \
-            ./ ./deploy-upload/
-          # Keep existing remote videos / local-only folders intact by not uploading them.
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
 
       - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.5
-        with:
-          username: ${{ secrets.SFTP_USERNAME }}
-          server: ${{ secrets.SFTP_HOST }}
-          port: 22
-          local_path: './deploy-upload/*'
-          remote_path: ${{ secrets.SFTP_REMOTE_PATH }}
-          sftp_only: true
-          password: ${{ secrets.SFTP_PASSWORD }}
-          delete_remote_files: false
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SFTP_HOST}" ] || [ -z "${SFTP_USERNAME}" ] || [ -z "${SFTP_PASSWORD}" ] || [ -z "${SFTP_REMOTE_PATH}" ]; then
+            echo "Missing required secrets. Check SFTP_HOST / SFTP_USERNAME / SFTP_PASSWORD / SFTP_REMOTE_PATH."
+            exit 1
+          fi
+
+          # Normalize remote path (no trailing slash for lftp mkdir/cd)
+          REMOTE_PATH="${SFTP_REMOTE_PATH%/}"
+
+          lftp -c "
+            set sftp:auto-confirm yes
+            set net:timeout 30
+            set net:max-retries 2
+            set net:reconnect-interval-base 5
+            open -u ${SFTP_USERNAME},${SFTP_PASSWORD} sftp://${SFTP_HOST}
+            mirror -R --verbose --parallel=2 \
+              --exclude-glob .git/ \
+              --exclude-glob .github/ \
+              --exclude-glob .vscode/ \
+              --exclude-glob .venv-map/ \
+              --exclude-glob node_modules/ \
+              --exclude-glob .DS_Store \
+              --exclude-glob __pycache__/ \
+              --exclude-glob '*.pyc' \
+              --exclude-glob assets/images/wp3/ \
+              --exclude-glob assets/videos/ \
+              --exclude-glob .ftp-deploy-sync-state.json \
+              ./ ${REMOTE_PATH}/
+            bye
+          "
