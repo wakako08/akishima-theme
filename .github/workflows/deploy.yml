@@ -17,118 +17,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
-          python-version: '3.12'
-
-      - name: Install paramiko
-        run: python -m pip install --upgrade pip paramiko
-
-      - name: Deploy via SFTP
-        env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
-          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
-          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
-        run: |
-          python <<'PY'
-          import os
-          import stat
-          from pathlib import Path
-
-          import paramiko
-
-          host = os.environ.get("SFTP_HOST", "").strip()
-          user = os.environ.get("SFTP_USERNAME", "").strip()
-          password = os.environ.get("SFTP_PASSWORD", "").strip()
-          remote_root = os.environ.get("SFTP_REMOTE_PATH", "").strip().rstrip("/")
-
-          print(f"host={host!r}")
-          print(f"user={user!r}")
-          print(f"remote={remote_root!r}")
-          print(f"pass_len={len(password)}")
-
-          if not all([host, user, password, remote_root]):
-              raise SystemExit("Missing required secrets.")
-
-          exclude_dirs = {
-              ".git",
-              ".github",
-              ".vscode",
-              ".venv-map",
-              "node_modules",
-              "__pycache__",
-          }
-          exclude_path_prefixes = (
-              "assets/images/wp3",
-              "assets/videos",
-          )
-
-          def should_skip(rel: Path) -> bool:
-              parts = rel.parts
-              if any(p in exclude_dirs for p in parts):
-                  return True
-              s = rel.as_posix()
-              return any(s == p or s.startswith(p + "/") for p in exclude_path_prefixes)
-
-          transport = paramiko.Transport((host, 22))
-          try:
-              transport.connect(username=user, password=password)
-          except Exception as exc:
-              raise SystemExit(
-                  "SFTP login failed. Re-check SFTP_USERNAME / SFTP_PASSWORD in GitHub Secrets.\n"
-                  f"Detail: {exc}"
-              ) from exc
-
-          sftp = paramiko.SFTPClient.from_transport(transport)
-          assert sftp is not None
-
-          try:
-              try:
-                  sftp.listdir(remote_root)
-              except FileNotFoundError as exc:
-                  raise SystemExit(
-                      f"Remote path not found: {remote_root}\n"
-                      "Set SFTP_REMOTE_PATH to /home/akishimajichiren/www/wp3/wp-content/themes/akishima/"
-                  ) from exc
-
-              local_root = Path(".").resolve()
-              uploaded = 0
-
-              for path in local_root.rglob("*"):
-                  rel = path.relative_to(local_root)
-                  if should_skip(rel):
-                      continue
-                  if path.name in {".DS_Store"} or path.suffix == ".pyc":
-                      continue
-
-                  remote_path = f"{remote_root}/{rel.as_posix()}"
-                  if path.is_dir():
-                      try:
-                          sftp.stat(remote_path)
-                      except FileNotFoundError:
-                          sftp.mkdir(remote_path)
-                      continue
-
-                  # Ensure parent dirs exist
-                  parent = rel.parent
-                  cursor = remote_root
-                  if parent != Path("."):
-                      for part in parent.parts:
-                          cursor = f"{cursor}/{part}"
-                          try:
-                              sftp.stat(cursor)
-                          except FileNotFoundError:
-                              sftp.mkdir(cursor)
-
-                  sftp.put(str(path), remote_path)
-                  uploaded += 1
-                  if uploaded % 25 == 0:
-                      print(f"uploaded {uploaded} files...")
-
-              print(f"Deploy finished. uploaded={uploaded}")
-          finally:
-              sftp.close()
-              transport.close()
-          PY
+          server: akishimajichiren.sakura.ne.jp
+          username: akishimajichiren
+          password: ${{ secrets.SFTP_PASSWORD }}
+          protocol: ftps
+          port: 21
+          local-dir: ./
+          # Sakura FTP initial folder is www, so theme path is under www/
+          server-dir: /www/wp3/wp-content/themes/akishima/
+          timeout: 600000
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            **/.vscode/**
+            **/.venv-map/**
+            **/node_modules/**
+            **/.DS_Store
+            **/__pycache__/**
+            **/*.pyc
+            **/assets/images/wp3/**
+            **/assets/videos/**
+            **/.ftp-deploy-sync-state.json
