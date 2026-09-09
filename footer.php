@@ -54,8 +54,8 @@
             </div><!-- .footer-top -->
 
             <!-- 下段: 助成表記 / コピーライト -->
-            <div class="footer-bottom">
-              <!--     <div class="footer-legal">
+            <!--  <div class="footer-bottom">
+             <div class="footer-legal">
                     <p class="footer-grant">平成22年度東京都地域底力再生事業助成対象事業</p>
                     <p class="footer-notice">※ 本ページに記載内容の無断転載を禁じます</p>
                 </div>　-->
