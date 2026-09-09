@@ -185,16 +185,16 @@ $accordion_items = array(
     <div class="library-homepage__inner">
 
         <!-- タイトル ＋ ボタン -->
-        <div class="library-homepage__lead">
+        <!--  <div class="library-homepage__lead">
             <p class="library-homepage__title">自治連のホームページも活用ください！</p>
             <a href="https://akishima-jichiren.jp/" class="library-homepage__btn" target="_blank" rel="noopener noreferrer">
                 <span class="library-homepage__btn-text">HOME PAGE</span>
                 <?php get_template_part( 'template-parts/shared/action-btn-arrow' ); ?>
             </a>
-        </div>
+        </div>-->
 
         <!-- 本文テキスト -->
-        <div class="library-homepage__body">
+         <!-- <div class="library-homepage__body">
             <p>2011年3月にスタートした、自治連のホームページは、東京都の地域の底地から再生事業助成金制度を利用し、自治連の中に専門委員会を設定し、委員メンバーを中心に、常任委員全員で協議しながら作成しました。特に単一自治会のページも用意させていただきましたので、大いにご活用ください。</p>
             <p>
                 自治連アドレスは、<a href="https://akishima-jichiren.jp/" target="_blank" rel="noopener noreferrer">https://akishima-jichiren.jp/</a>です。<br>
@@ -209,7 +209,7 @@ $accordion_items = array(
             <p>自治連のトップページは、自治連の広報委員会と事務局で担当し書き込みをしております。もちろん、このホームページが今後も継続するために専門の業者に委託して、今後ともさらに、内容を改善していきたいと思います。<br>
                 また、ページの中に、バナー広告と一押し店の広告を用意し、市内の各種業界の皆様に協賛をいただき、今後の運営に有効活用させていただきます。また、本冊子の今後の更新や増刷にも使い、広告の掲載料金は今後の運営に有効活用させていただきます。
             </p>
-        </div>
+        </div>-->
 
     </div>
 </section>
