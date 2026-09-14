@@ -80,7 +80,7 @@ $material_base  = 'https://www.akishima-jichiren.jp/material/';
                 >
             </div>
             <ul class="jichikai-card__links">
-                <li><a href="https://docs.google.com/spreadsheets/d/13leAW8_43c3tTpabyqB81GoTeW_B4gyuEgWnZZcQKq4/edit?usp=sharing" target="_blank" rel="noopener noreferrer">協力店一覧</a></li>
+               <li><a href="https://akishima-jichiren.jp/wp_main/wp-content/uploads/2025/09/2025%E3%81%94%E8%BF%91%E6%89%80.pdf" target="_blank" rel="noopener noreferrer">協力店一覧</a></li>
             </ul>
         </div>
 
