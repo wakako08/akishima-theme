@@ -1640,10 +1640,6 @@ a.application-card .application-btn:hover {
     font-size: 16px;
     font-weight: 400;
     margin-bottom: 0;
-   
-@media screen and (max-width: 768px) {
-        font-size: 14px;
-   ｝
 }
 
 /* -- ナビゲーション 2列 -- */
@@ -2116,6 +2112,10 @@ a.application-card .application-btn:hover {
     .footer-logo img {
         width: 240px;
         height: auto;
+    }
+   
+   .footer-address p {
+        font-size: 14px;
     }
 
     .footer-nav {
