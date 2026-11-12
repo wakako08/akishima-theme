@@ -68,7 +68,7 @@ $old_message = isset( $_GET['_message'] ) ? sanitize_textarea_field( wp_unslash(
 <section class="contact-form-section">
     <div class="contact-form-section__inner">
 
-        <?php if ( 'mail_error' === $form_status ) : ?>
+        <?php if ( 'mail_error' === $form_status || 'spam' === $form_status ) : ?>
         <div class="contact-form__notice contact-form__notice--error" role="alert">
             <p>送信に失敗しました。時間をおいて再度お試しください。</p>
         </div>

@@ -10,6 +10,7 @@ require_once get_template_directory() . '/inc/community-news.php';
 require_once get_template_directory() . '/inc/community-events.php';
 require_once get_template_directory() . '/inc/community-admin.php';
 require_once get_template_directory() . '/inc/links-data.php';
+require_once get_template_directory() . '/inc/recaptcha.php';
 
 /**
  * テーマのセットアップ

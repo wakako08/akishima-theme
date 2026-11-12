@@ -18,6 +18,13 @@ if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['_contact_nonce'] ) 
 
     $errors = akishima_validate_contact_form( $name, $email, $message, $privacy );
 
+    $recaptcha_token = isset( $_POST['g-recaptcha-response'] ) ? sanitize_text_field( wp_unslash( $_POST['g-recaptcha-response'] ) ) : '';
+    if ( empty( $errors ) && ! akishima_recaptcha_verify_token( $recaptcha_token ) ) {
+        $redirect_url = add_query_arg( 'contact_status', 'spam', get_permalink() );
+        wp_safe_redirect( $redirect_url );
+        exit;
+    }
+
     if ( empty( $errors ) ) {
         $to      = get_option( 'admin_email' );
         $subject = '【お問い合わせ】' . $name . ' 様より';
