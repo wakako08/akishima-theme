@@ -59,7 +59,15 @@ function akishima_recaptcha_verify_token( $token ) {
 }
 
 function akishima_enqueue_recaptcha() {
-    if ( is_admin() || ! is_page_template( 'page-contact.php' ) ) {
+    if ( is_admin() ) {
+        return;
+    }
+
+    // page-contact.php はスラッグ contact で自動適用されるため、
+    // is_page_template() だけでは読み込まれない。
+    $is_contact = is_page_template( 'page-contact.php' )
+        || is_page( array( 'contact', 'お問い合わせ' ) );
+    if ( ! $is_contact ) {
         return;
     }
 
