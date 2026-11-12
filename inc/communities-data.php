@@ -2,12 +2,16 @@
 /**
  * 自治会マスターデータ（90自治会）
  *
- * 各自治会の子サイト URL は /wp3/{ブロック2桁}-{番号2桁}/ 形式（例: /wp3/01-01/）。
+ * 各自治会の子サイト URL は /{ブロック2桁}-{番号2桁}/ 形式（例: /01-01/）。
  * 子サイト未作成の自治会もリンク先は設定済み（作成後にそのまま有効）。
  */
 
 function akishima_guide_base_url() {
-    return 'https://akishimajichiren.sakura.ne.jp/wp3';
+    if ( is_multisite() ) {
+        return untrailingslashit( get_home_url( get_main_site_id(), '/' ) );
+    }
+
+    return untrailingslashit( home_url( '/' ) );
 }
 
 function akishima_community_guide_url( $slug ) {
